@@ -26,9 +26,17 @@ flowchart TB
     Recorder --> Dashboard["能源仪表盘<br/>读取所选累计电量的长期统计"]
 ```
 
-发现阶段通过 `UDP 12414` 识别电表。添加后，HA 为每台电表主动建立独立的 `TCP 12416` 会话，每 3 秒发送心跳，每 30 秒查询状态，同时接收电表的主动上报。连接中断时，集成会重连。
+## 实现原理
 
-每帧报文可能只包含部分数据点。集成按型号解码和换算，将本帧读数合并到各传感器的当前值。HA 通过 Recorder 保存历史记录，能源仪表盘按所选累计电量传感器读取长期统计。
+- **识别设备与保存配置**。配置流程通过 `UDP 12414` 读取发现应答中的 MAC 和产品标识，匹配内置的型号定义。确认能通过 TCP 读出有效数据后，HA 为每台表保存一条独立的集成配置，记录 IP、MAC 和型号。MAC 用于判断设备是否已添加。 [设备发现](custom_components/zhuohu_local/discovery.py) · [配置流程](custom_components/zhuohu_local/config_flow.py)
+- **管理采集任务和实体**。加载配置时，HA Core 为每台表启动一个异步采集任务，并按型号注册原生传感器。传感器订阅读数变化和可用性变化，由采集任务通知 HA 更新。卸载设备时，HA 停止对应任务。 [集成入口](custom_components/zhuohu_local/__init__.py) · [传感器实现](custom_components/zhuohu_local/sensor.py)
+
+## 采集原理
+
+1. **建立只读会话**。HA 主动连接电表的 `TCP 12416`，完成 GAgent 局域网登录。连接成功后立即查询一次状态，之后每 3 秒发送心跳、每 30 秒查询状态。查询应答和电表主动上报共用这条连接。 [GAgent 会话实现](custom_components/zhuohu_local/protocol.py)
+2. **解码并换算**。报文中的数据点位图标记本帧包含的字段。集成按该型号定义的字段顺序和字节长度取值，检查数值范围，再使用 `原始值 × 倍率 + 偏移量` 换算。例如电压字段的原始值 `23015` 对应 `230.15 V`。 [型号字段定义](custom_components/zhuohu_local/profile_data.py) · [数据点解码](custom_components/zhuohu_local/profiles.py)
+3. **合并读数并处理掉线**。增量报文只更新本帧包含的有效字段，其他字段继续使用最近一次有效读数。读帧超时或断线后，集成会标记该设备不可用并重连。连接仍在收帧但连续两分钟没有有效读数时，也会将该设备标记为不可用。 [采集任务](custom_components/zhuohu_local/runtime.py)
+4. **累计电量进入能源统计**。电量传感器直接使用电表上报的累计用电数据点，单位为 `kWh`，状态类别为 `total_increasing`。Recorder 保存长期统计，能源仪表盘根据所选电量传感器的累计变化汇总用电量。 [Home Assistant 长期统计文档](https://www.home-assistant.io/docs/configuration/long-term-statistics/)
 
 ## 安装
 
