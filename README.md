@@ -1,6 +1,30 @@
 # 卓虎电表局域网采集与 Home Assistant 接入
 
-这套方案适用于在局域网内提供机智云 GAgent 服务的卓虎 Wi-Fi 电表。Docker 主机主动连接电表，接收实时数据，再通过本地 Mosquitto 将传感器发布给 Home Assistant。已在两台单相电表和一台三相电表上验证。
+这套方案适用于能通过机智云 GAgent 在局域网读取的卓虎 Wi-Fi 电表。Home Assistant 自定义集成直接连接电表，为每台设备创建本地传感器。
+
+## 安装 Home Assistant 自定义集成
+
+1. 将本仓库的 `custom_components/zhuohu_local` 整个目录复制到 Home Assistant 的 `/config/custom_components/`，重启 Home Assistant Core。
+2. 在「设置 → 设备与服务 → 添加集成」里搜索 **Zhuohu Local**。
+3. 选择「扫描局域网」后，从结果里选择一台表。也可以选「手动填写 IP」。如果电表的 UDP 发现应答无法到达 HA，手动输入可以补充型号和 MAC，再通过 TCP 验证实际读数。
+4. 对其余电表重复添加。推荐在路由器上按 MAC 保留 IP。
+
+集成对 HA 启用的私有 IPv4 网段发送 GAgent 发现报文。/23 或较小的网段会同时逐地址查询。较大的网段使用广播发现。每台电表单独维护连接，掉线后自动重连。当前支持 **WiFi 单相电测模块 001** 和 **WiFi 三相电测模块**。
+
+已有确定地址的安装可以通过以下配置导入设备。导入后，设备出现在「设备与服务」，按 MAC 去重。
+
+```yaml
+zhuohu_local:
+  hosts:
+    - 192.168.1.100
+    - 192.168.1.101
+```
+
+若从 MQTT 或 Node-RED 迁移，先在 HA 核对新集成的读数和可用性。能源仪表盘按统计 ID 使用历史数据。需要接续原曲线时，交接前先核对同一电表的累计电量，再让原统计 ID 继续接收本地读数。 [Home Assistant 长期统计文档](https://www.home-assistant.io/docs/configuration/long-term-statistics/)
+
+## 原 Docker 和 MQTT 采集方案
+
+下面记录原先在两台单相电表和一台三相电表上验证的 Docker 采集方案。Docker 主机主动连接电表，接收实时数据，再通过本地 Mosquitto 将传感器发布给 Home Assistant。
 
 ```mermaid
 flowchart LR
@@ -44,7 +68,7 @@ docker compose ps bridge
 docker compose logs --tail 30 bridge
 ```
 
-这一仓库保存接入和运维文档。上述命令在含采集程序和 Compose 文件的部署目录执行。
+上述命令在含 Docker 采集程序和 Compose 文件的部署目录执行。
 
 ## MQTT 主题与可用性
 

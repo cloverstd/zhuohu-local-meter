@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "添加卓虎电表",
+        "menu_options": {
+          "scan": "扫描局域网",
+          "manual": "手动填写 IP"
+        }
+      },
+      "scan": {
+        "title": "发现的卓虎电表",
+        "data": {"meter": "电表"}
+      },
+      "manual": {
+        "title": "手动填写 IP",
+        "data": {"host": "局域网 IPv4 地址"}
+      },
+      "manual_details": {
+        "title": "确认电表型号",
+        "description": "UDP 发现没有识别出 {host}。请填写电表或路由器显示的 MAC 地址和型号。",
+        "data": {"mac": "MAC 地址", "kind": "电表型号"}
+      }
+    },
+    "error": {
+      "cannot_connect": "无法通过局域网登录并获取读数。",
+      "invalid_ip": "请填写私有 IPv4 地址。",
+      "invalid_mac": "请填写电表的六字节 MAC 地址。",
+      "invalid_device": "请从扫描结果中选择电表。"
+    },
+    "abort": {
+      "already_configured": "这台电表已经添加。",
+      "cannot_connect": "无法通过局域网登录并获取读数。",
+      "no_devices": "没有发现新的受支持电表。可以尝试手动填写 IP。",
+      "unsupported_device": "这个地址没有返回受支持电表的发现应答。"
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add a Zhuohu meter",
+        "menu_options": {
+          "scan": "Scan the local network",
+          "manual": "Enter an IP address"
+        }
+      },
+      "scan": {
+        "title": "Discovered Zhuohu meters",
+        "data": {"meter": "Meter"}
+      },
+      "manual": {
+        "title": "Enter an IP address",
+        "data": {"host": "Local IPv4 address"}
+      },
+      "manual_details": {
+        "title": "Identify the meter",
+        "description": "UDP discovery did not identify {host}. Enter the MAC address and model shown on the device or your router.",
+        "data": {"mac": "MAC address", "kind": "Meter model"}
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not log in locally and read the meter.",
+      "invalid_ip": "Enter a private IPv4 address.",
+      "invalid_mac": "Enter the six-byte MAC address of the meter.",
+      "invalid_device": "Select a meter from the scan results."
+    },
+    "abort": {
+      "already_configured": "This meter is already configured.",
+      "cannot_connect": "Could not log in locally and read the meter.",
+      "no_devices": "No new supported meter replied. You can add a meter by IP address.",
+      "unsupported_device": "The address did not reply as a supported meter."
+    }
+  }
+}
