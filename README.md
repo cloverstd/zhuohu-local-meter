@@ -7,6 +7,29 @@
 | WiFi 单相电测模块 001 | 电压、电流、频率、功率因数、有功功率、无功功率、累计电量 |
 | WiFi 三相电测模块 | 各相电压和电流，各相及合相的功率因数、有功功率、无功功率和累计电量 |
 
+## 采集架构
+
+```mermaid
+flowchart TB
+    Meter["卓虎 Wi-Fi 电表"]
+    subgraph HA["Home Assistant Core"]
+        Setup["发现与配置设备<br/>扫描局域网或手填 IP"]
+        Session["Zhuohu Local<br/>每台电表的 GAgent 只读会话"]
+        Decode["按型号解码<br/>合并增量读数"]
+        Sensor["HA 原生传感器"]
+        Recorder["Recorder<br/>历史记录与长期统计"]
+        Setup -->|"保存 IP、MAC 和型号"| Session
+        Session --> Decode --> Sensor --> Recorder
+    end
+    Meter <-->|"UDP 12414 · 发现请求与应答"| Setup
+    Meter <-->|"TCP 12416 · 状态查询、应答与主动上报"| Session
+    Recorder --> Dashboard["能源仪表盘<br/>读取所选累计电量的长期统计"]
+```
+
+发现阶段通过 `UDP 12414` 识别电表。添加后，HA 为每台电表主动建立独立的 `TCP 12416` 会话，每 3 秒发送心跳，每 30 秒查询状态，同时接收电表的主动上报。连接中断时，集成会重连。
+
+每帧报文可能只包含部分数据点。集成按型号解码和换算，将本帧读数合并到各传感器的当前值。HA 通过 Recorder 保存历史记录，能源仪表盘按所选累计电量传感器读取长期统计。
+
 ## 安装
 
 1. 从 GitHub 下载本仓库，把 `custom_components/zhuohu_local` 整个目录复制到 Home Assistant 的 `/config/custom_components/`。
