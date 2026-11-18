@@ -26,7 +26,6 @@ class ZhuohuSensor(SensorEntity):
         mac = entry.data[CONF_MAC]
         self._attr_name = sensor.name
         self._attr_unique_id = f"{mac.replace(':', '')}_{sensor.key}"
-        self._attr_suggested_object_id = f"zhuohu_meter_{self.meter.host.rsplit('.', 1)[1]}_{sensor.key}"
         self._attr_device_class = SensorDeviceClass(sensor.device_class)
         self._attr_state_class = SensorStateClass(sensor.state_class)
         self._attr_native_unit_of_measurement = sensor.unit or None
